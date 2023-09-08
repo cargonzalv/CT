@@ -1,0 +1,21 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source: { repository: ruby, tag: 2.4-alpine }
+run:
+  path: common-tasks-repo/generate-pretty-message/0.1.0/scripts/compose-attachment.rb
+
+params:
+  TEMPLATE_FILE:        common-tasks-repo/generate-pretty-message/0.1.0/assets/attachments.json.erb
+  MESSAGE_DESTINATION:  slack-attachment/attachment.json
+
+  AUTHOR:  "Concourse"
+  COLOUR:  "#4EC2C5"
+  MESSAGE: ""
+  TITLE:   ""
+
+inputs:
+  - name: common-tasks-repo
+outputs:
+  - name: slack-attachment

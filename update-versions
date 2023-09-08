@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -o pipefail \
+    -o errexit
+
+if [[ -n ${DEBUG} ]]; then
+  set -o xtrace \
+      -o verbose
+fi
+
+link_latest() {
+  local _FOLDER=${1}
+  local _VERSION_LIST=${2}
+
+  (cd "${_FOLDER}"; ln -s "$(head -1 <<< "${_VERSION_LIST}")" latest)
+}
+
+generate_minors() {
+  local _VERSION_LIST=${1}
+
+  cut -d. -f1,2 <<< "${_VERSION_LIST}" | uniq
+}
+
+generate_majors() {
+  local _VERSION_LIST=${1}
+
+  cut -d. -f1 <<< "${_VERSION_LIST}" | uniq
+}
+
+filter_versions() {
+  local _PREFIX=${1}
+  local _VERSION_LIST=${2}
+
+  local REGEX
+  REGEX=$(sed 's/\./\\./g' <<< "${_PREFIX}")
+
+  grep -E "^${REGEX}\." <<< "${_VERSION_LIST}"
+}
+
+link_minors() {
+  local _FOLDER=${1}
+  local _VERSION_LIST=${2}
+  local MINOR_VERSIONS
+  local FILTERED_VERSIONS
+
+  MINOR_VERSIONS="$(generate_minors "${_VERSION_LIST}")"
+  for v in ${MINOR_VERSIONS}; do
+    FILTERED_VERSIONS=$(filter_versions "${v}" "${_VERSION_LIST}")
+    (cd "${_FOLDER}"; ln -s "$(tr " " "\n" <<< "${FILTERED_VERSIONS[*]}" | sort -rV | head -1)" "${v}")
+  done
+}
+
+link_majors() {
+  local _FOLDER=${1}
+  local _VERSION_LIST=${2}
+  local MAJOR_VERSIONS
+  local FILTERED_VERSIONS
+
+  MAJOR_VERSIONS="$(generate_majors "${_VERSION_LIST}")"
+  for v in ${MAJOR_VERSIONS}; do
+    FILTERED_VERSIONS=$(filter_versions "${v}" "${_VERSION_LIST}")
+    (cd "${_FOLDER}"; ln -s "$(tr " " "\n" <<< "${FILTERED_VERSIONS[*]}" | sort -rV | head -1)" "${v}")
+  done
+}
+
+detect_whitespaces() {
+  local _VERSION_LIST=${1}
+
+  if grep ' ' <<< "${_VERSION_LIST}"; then
+    echo -e 'Space detected in item name! Abort!' $'\xf0\x9f\x92\xa5'; \
+    exit 1
+  fi
+}
+
+for fold in $(find . -maxdepth 1 -type d ! -name . ! -name ci ! -name '.*'); do
+  find "${fold}" -maxdepth 1 -type l -delete
+
+  VERSIONS="$(find "${fold}" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | grep -vE '\-rc[0-9]+$' | sort -rV )"
+  detect_whitespaces "${VERSIONS}"
+
+  link_latest "${fold}" "${VERSIONS}"
+  link_minors "${fold}" "${VERSIONS}"
+  link_majors "${fold}" "${VERSIONS}"
+done

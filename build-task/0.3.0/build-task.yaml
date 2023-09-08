@@ -1,0 +1,35 @@
+---
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: bash
+    tag: 4
+params:
+  BUILDKIT:   1
+  SSH_KEY_0:            gvhjgvjhgv
+  CONTEXT:              source
+  REPOSITORY:           adgear-docker.jfrog.io/adgear/myrepo
+  USERNAME:             khjklhbgl
+  PASSWORD:             hghjgvkghv
+  TAG_FILE:             ""
+  BUILD_ARG_build_type: "build"
+  DOCKERDARGS:          "--mtu 1440"
+  SAVE_ARTIFACT:        false
+
+run:
+  path: bash
+  args:
+    - -c
+    - |
+      set -ex
+      bash common-tasks-repo/build-task/latest/build.sh
+
+inputs:
+- name: source
+- name: common-tasks-repo
+- name: metadata
+  optional: true
+
+outputs:
+- name: image

@@ -1,0 +1,65 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: adgear-docker.jfrog.io/adgear/awscli
+    username: ((artifactory.username))
+    password: ((artifactory.password))
+
+run:
+  path: /bin/bash
+  args:
+    - -c
+    - |
+      set -o errexit -o pipefail
+      if [ -z "${debug}" ]; then set -o xtrace -o verbose; fi
+
+      bucket="$(cut -d '/' -f3 <<< "${destination}")"
+      path="$(sed "s/s3:\/\/${bucket}\///" <<< "${destination}")"
+
+      if [ -z "${destination}" ]; then
+        echo -e "You must specify a destination with:\n"
+        echo 'params:'
+        echo -e "  destination: s3://mybucket/somefolder.\n"
+        exit 1
+      fi
+
+      echo "source: ${source_glob}"
+      echo -e "destination: ${destination}\n"
+
+      for source_file in ${source_glob}; do
+        if grep -qF '*' <<< "${source_file}"; then
+          echo "The source folder is empty."
+          echo "Verify your upstream task is outputting properly"
+          echo "and your volumes are adequately mapped."
+          exit 1
+        fi
+
+        target_file="${path}/$(basename ${source_file})"
+
+        if [ ${overwrite} = "true" ]; then
+          aws s3 cp "${source_file}" "s3://${bucket}/${target_file}"
+        else
+          if ! aws s3api head-object --bucket "${bucket}" --key "${target_file}" &> /dev/null; then
+            aws s3 cp "${source_file}" "s3://${bucket}/${target_file}"
+          else
+            echo -e "\ns3://${bucket}/${target_file} already exists and overwriting objects is disabled"
+            exit 1
+          fi
+        fi
+      done
+
+params:
+  source_glob: ./source/*
+  destination: ""
+  overwrite: false
+
+  AWS_ACCESS_KEY_ID: ((s3-repo.key_id))
+  AWS_SECRET_ACCESS_KEY: ((s3-repo.key_secret))
+  AWS_DEFAULT_REGION: us-east-1
+
+inputs:
+  - name: source
+outputs:
+  - name: tags

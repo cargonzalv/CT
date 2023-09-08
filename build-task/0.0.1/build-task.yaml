@@ -1,0 +1,28 @@
+---
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: bash
+    tag: 4
+params:
+  BUILDKIT:   1
+  SSH_KEY_0:  gvhjgvjhgv
+  REPOSITORY: adgear-docker.jfrog.io/adgear/rtb-gateway
+  CONTEXT:    rtb-gateway-repo
+  USERNAME:   khjklhbgl
+  PASSWORD:   hghjgvkghv
+  TAG_FILE:   rtb-gateway-repo/.git/tag
+  BUILD_ARG_build_type: "build"
+
+run:
+  path: bash
+  args:
+    - -c
+    - |
+      set -ex
+      bash common-tasks-repo/build-task/latest/build.sh
+
+inputs:
+- name: rtb-gateway-repo
+- name: common-tasks-repo

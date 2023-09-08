@@ -1,0 +1,35 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: adgear-docker.jfrog.io/adgear/jvm-8-dev
+    tag: 2.0.5
+    username: ((artifactory.username))
+    password: ((artifactory.password))
+
+run:
+  path: /root/bin/bootstrap.sh
+  args: [ common-tasks-repo/sbt-build/2.0.0/scripts/build-commit.sh ]
+
+params:
+  SBT_ARTIFACTORY_USER:     ((artifactory.username))
+  SBT_ARTIFACTORY_PASSWORD: ((artifactory.password))
+  SSH_KEY_0: ((adgear-concourse.ssh_private_key))
+  SSH_KEY_NAME_0: id_rsa
+
+  TARGET_DIR: distribution
+  EXPORT_VOLUMES: true
+  IS_RELEASE: false
+  GIT_SUBMODULE: false
+  SBT_DEPLOY: true
+  VERSION_IN_ARTIFACT: false
+  TASKS: "clean compile test"
+
+inputs:
+  - name: source
+  - name: common-tasks-repo
+
+outputs:
+  - name: artifact
+  - name: version

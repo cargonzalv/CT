@@ -1,0 +1,31 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: adgear-docker.jfrog.io/adgear/jvm-8-dev
+    tag: 1.8.12
+    username: ((artifactory.username))
+    password: ((artifactory.password))
+
+run:
+  path: /root/bin/bootstrap.sh
+  dir: source
+  args: [ common-tasks-repo/sbt-build/0.1.0/scripts/build-commit.sh ]
+
+params:
+  M2_ARTIFACTORY_USER:      ((artifactory.username))
+  M2_ARTIFACTORY_PASSWORD:  ((artifactory.password))
+  SBT_ARTIFACTORY_USER:     ((artifactory.username))
+  SBT_ARTIFACTORY_PASSWORD: ((artifactory.password))
+
+  IS_RELEASE: false
+  TASKS: "test publish"
+
+inputs:
+  - name: source
+  - name: common-tasks-repo
+
+outputs:
+  - name: artifact
+  - name: version

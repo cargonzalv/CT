@@ -1,0 +1,33 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: alpine
+    tag: 3.9
+
+run:
+  path: /bin/sh
+  args:
+    - -c
+    - |
+      set -o errexit -o pipefail
+
+      if [ ! -f "${version_file}" ]; then
+        echo "Can't find a file at ${version_file}"
+        exit 1
+      fi
+
+      printf 'tags.bare: '
+      cat "${version_file}" | tee tags/tags.bare
+      printf 'tags.additionnal: '
+      cat "${version_file}" | awk '{ split($1,a,"."); printf a[1]" "a[1]"."a[2]}' | tee tags/tags.additional
+      echo ""
+
+params:
+  version_file: source/version
+
+inputs:
+  - name: source
+outputs:
+  - name: tags
